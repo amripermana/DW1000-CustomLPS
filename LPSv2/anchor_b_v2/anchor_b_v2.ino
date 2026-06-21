@@ -7,6 +7,7 @@ uint32_t lastTimeLocal = 0;
 uint8_t currentTag = 0x00;
 STATE state = ST_IDLE;
 double distance;
+const int timeout = 1000;
 
 void setup() {
   Serial.begin(115200);
@@ -29,6 +30,7 @@ void loop() {
         lps.setTimePollAckSent();
       }
       lps.startReceive();
+      lastTimeGlobal = millis();
   }
   if(receiveAck){
     receiveAck = false;
@@ -43,5 +45,12 @@ void loop() {
       distance = lps.calculateDistance();
       lps.sendDistance(currentTag, distance);
     }
+    lastTimeGlobal = millis();
+  }
+
+  if(millis()-lastTimeGlobal > timeout){
+    lps.restartTRX();
+    lps.startReceive();
+    lastTimeGlobal = millis();
   }
 }

@@ -14,7 +14,7 @@ Position position_self = {0,0};
 Position position_B = {1.5,0};
 Position position_C = {1.5,2.5};
 unsigned long lastTimeBle = 0;
-int timeout = 1000;
+const int timeout = 200;
 
 void setup() {
   Serial.begin(115200);
@@ -50,7 +50,8 @@ void loop() {
       lastTimeLocal = millis();
       //lps.restartTRX();
       state = ST_IDLE;
-      //Serial.println("DAPAT GILIRAN");
+      // Serial.println("DAPAT GILIRAN");
+      digitalWrite(led, digitalRead(led) ^ 1);
       //delay(10);
       lps.sendCmd(currentAnchor, POLL);
     }
@@ -70,6 +71,7 @@ void loop() {
       lps.commitData();
       if(lps.getLastCmd() == POLL_ACK){
         lps.sendRange(currentAnchor);
+        // digitalWrite(led, digitalRead(led) ^ 1);
       }
       else if(lps.getLastCmd() == RANGE_REPORT){
         distance[currentAnchor-1] = lps.getDistance();
@@ -79,6 +81,7 @@ void loop() {
         //Serial.println(distance);
         currentAnchor++;
         state = ST_COMPLETE;
+        lastTimeGlobal = millis();
       }
     }
 
@@ -92,8 +95,9 @@ void loop() {
       Serial.print("TIMEOUT FOR ANCHOR ");
       Serial.println(currentAnchor);
       state = ST_WAIT;
+      Serial.println("Back to Wait...");
       lps.sendCmd(ANCHOR_MAIN, TAG_FINISH);
-      delay(100);
+      delay(10);
       lps.restartTRX();
       lps.startReceive();
     }
@@ -111,16 +115,16 @@ void loop() {
       // Serial.println(y, 3);
 
       //Send coordinate to BLE Periodically
-      if(millis() - lastTimeBle > 100){
+      if(millis() - lastTimeBle > 100 && ble.connectionStatus()){
         String x_str = String(x, 2);
         String y_str = String(y, 2);
         String ble_send = x_str+","+y_str;
         ble.send(ble_send);
         lastTimeBle = millis();
-        // Serial.print("X : ");
-        // Serial.print(x,3);
-        // Serial.print("  |  y : ");
-        // Serial.println(y, 3);
+        Serial.print("X : ");
+        Serial.print(x,3);
+        Serial.print("  |  y : ");
+        Serial.println(y, 3);
       }
 
       if(sentAck){
@@ -142,6 +146,17 @@ void loop() {
       lps.sendCmd(currentAnchor, POLL);
       //lastTimeGlobal = millis();
     }
+
+    if(millis()-lastTimeGlobal > timeout){
+      Serial.print("TIMEOUT ST_COMPLETE");
+      state = ST_WAIT;
+      Serial.println("Back to Wait...");
+      lps.sendCmd(ANCHOR_MAIN, TAG_FINISH);
+      delay(10);
+      lps.restartTRX();
+      lps.startReceive();
+    }
+
   }
  
 

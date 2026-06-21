@@ -8,7 +8,7 @@ uint8_t currentTag = 0x05;
 uint8_t totalTag = 1;
 STATE state = ST_BROADCAST;
 double distance;
-int timeout = 1000;
+const int timeout = 300;
 
 
 void setup() {
@@ -19,6 +19,7 @@ void setup() {
   lps.begin(device_address);
   lps.printModulInfo();
 
+  lps.restartTRX();
   lastTimeGlobal = millis();
   delay(1000);
 }
@@ -38,8 +39,9 @@ void loop() {
       lps.startReceive();
       state = ST_IDLE;
       /////////DEBUG/////////
-      //Serial.print("CMD SENT TO TAG : ");
-      //Serial.println(currentTag);
+      // Serial.print("CMD SENT TO TAG : ");
+      // Serial.println(currentTag);
+      digitalWrite(led, digitalRead(led) ^ 1);
       ///////////////////////
     }
   }
@@ -72,7 +74,7 @@ void loop() {
     if(millis()-lastTimeGlobal > timeout){
       state = ST_BROADCAST;
       lps.restartTRX();
-      delay(100);
+      delay(10);
       currentTag++;
       if(currentTag-4>totalTag){
         currentTag = 0x05;
@@ -85,8 +87,8 @@ void loop() {
       if(currentTag-4>totalTag){
         currentTag = 0x05;
       }
-      delay(100);
-      //Serial.println("Back to Broadcast");
+      delay(10);
+      Serial.println("Back to Broadcast");
       lps.restartTRX();
       state = ST_BROADCAST;
     }
@@ -98,10 +100,11 @@ void loop() {
       state = ST_BROADCAST;
       currentTag++;
       lps.restartTRX();
-      delay(100);
+      delay(10);
       if(currentTag-4>totalTag){
         currentTag = 0x05;
       }
+      Serial.println("Back to Broadcast");
     }
   }
   

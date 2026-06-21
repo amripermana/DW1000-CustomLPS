@@ -190,6 +190,7 @@ STATE LPS::waitLastAnchor(){
     //!!!URGENT!!! : change ANCHOR_B if ANCHOR_C is Ready
     if(rx_buff[7] == ANCHOR_B && rx_buff[9] == 0xDE){
       output = ST_WAIT_POLLACK;
+      
     }
   }
   return output;
