@@ -1,0 +1,101 @@
+//DEfend DW1000 Anchor C
+
+#include <DW1000Ng.hpp>
+#include <DW1000NgUtils.hpp>
+#include <DW1000NgRanging.hpp>
+#include <DW1000NgRTLS.hpp>
+
+//SPI PINS
+const uint8_t PIN_RST = 10; 
+const uint8_t PIN_IRQ = 3; 
+const uint8_t PIN_SS = 7; 
+
+//Anchor UEI/MAC Address
+const char EUI[] = "DE:21:06:26:00:00:00:03";
+byte anchorMain_addr[] = {0x01, 0x00};
+uint16_t blink_rate = 200;
+double range_self;
+
+device_configuration_t DEFAULT_CONFIG = {
+    false,
+    true,
+    true,
+    true,
+    false,
+    SFDMode::STANDARD_SFD,
+    Channel::CHANNEL_5,
+    DataRate::RATE_850KBPS,
+    PulseFrequency::FREQ_16MHZ,
+    PreambleLength::LEN_256,
+    PreambleCode::CODE_3
+};
+
+frame_filtering_configuration_t ANCHOR_FRAME_FILTER_CONFIG = {
+    false,
+    false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false
+};
+
+void transmitRangeReport() {
+    byte rangingReport[] = {DATA, SHORT_SRC_AND_DEST, DW1000NgRTLS::increaseSequenceNumber(), 0,0, 0,0, 0,0, 0x60, 0,0 };
+    DW1000Ng::getNetworkId(&rangingReport[3]);
+    memcpy(&rangingReport[5], anchorMain_addr, 2);
+    DW1000Ng::getDeviceAddress(&rangingReport[7]);
+    DW1000NgUtils::writeValueToBytes(&rangingReport[10], static_cast<uint16_t>((range_self*1000)), 2);
+    DW1000Ng::setTransmitData(rangingReport, sizeof(rangingReport));
+    DW1000Ng::startTransmit();
+}
+
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println(F("***Defend Anchor C***"));
+  delay(2000);
+  //SPI.begin(4, 5, 6, PIN_SS);
+  DW1000Ng::initializeNoInterrupt(PIN_SS, PIN_RST);
+
+  DW1000Ng::applyConfiguration(DEFAULT_CONFIG);
+  DW1000Ng::enableFrameFiltering(ANCHOR_FRAME_FILTER_CONFIG);
+  DW1000Ng::setEUI(EUI);
+  DW1000Ng::setPreambleDetectionTimeout(64);
+  DW1000Ng::setSfdDetectionTimeout(273);
+  DW1000Ng::setReceiveFrameWaitTimeoutPeriod(5000);
+  DW1000Ng::setNetworkId(0xDEDE);
+  DW1000Ng::setDeviceAddress(3);
+  DW1000Ng::setAntennaDelay(16493);
+  uint32_t manualPower = 0xBFBFBFBF; 
+  DW1000Ng::setTXPower(manualPower);
+  Serial.println(F("[Info] Committed Configuration")); 
+  
+  //Modul Info
+  char msg[128];
+  Serial.println("=== Modul Info ===");
+  DW1000Ng::getPrintableDeviceIdentifier(msg);
+  Serial.print("Device ID: "); Serial.println(msg);
+  DW1000Ng::getPrintableExtendedUniqueIdentifier(msg);
+  Serial.print("Unique ID: "); Serial.println(msg);
+  DW1000Ng::getPrintableNetworkIdAndShortAddress(msg);
+  Serial.print("Network ID & Device Address: "); Serial.println(msg);
+  DW1000Ng::getPrintableDeviceMode(msg);
+  Serial.print("Device mode: "); Serial.println(msg); 
+  Serial.println("=============");   
+}
+
+void loop() {
+  RangeAcceptResult result = DW1000NgRTLS::anchorRangeAccept(NextActivity::ACTIVITY_FINISHED, blink_rate);
+  if(result.success) {
+    delay(4); // Tweak based on your hardware
+    range_self = result.range;
+    transmitRangeReport();
+
+    // String rangeString = "Range: "; rangeString += range_self; rangeString += " m";
+    // rangeString += "\t RX power: "; rangeString += DW1000Ng::getReceivePower(); rangeString += " dBm";
+    // Serial.println(rangeString);
+  }
+
+}
