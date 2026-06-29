@@ -15,15 +15,15 @@ void setup() {
   delay(2000);
   pinMode(led, OUTPUT);
 
-  ble.begin();
-  while(!ble.connectionStatus()){
-    delay(1);
-  }
-  digitalWrite(led, HIGH);
-  delay(500);
-  digitalWrite(led, LOW);
-  delay(500);
-  digitalWrite(led, HIGH);
+  // ble.begin();
+  // while(!ble.connectionStatus()){
+  //   delay(1);
+  // }
+  // digitalWrite(led, HIGH);
+  // delay(500);
+  // digitalWrite(led, LOW);
+  // delay(500);
+  // digitalWrite(led, HIGH);
 
   lps.beginTag(device_address);
   lps.printModulInfo();
@@ -50,13 +50,13 @@ void loop() {
         String x_str = String(x, 2);
         String y_str = String(y, 2);
         String data = x_str+","+y_str;
-        ble.send(data);
-        delay(500); //delay 500 ok dengan ble
+        //ble.send(data);
+        delay(100); //delay 500 ok dengan ble
         ///////////DEBUG///////////
-        // String positioning = "TAG01 POSITION >> x: ";
-        // positioning += x; positioning +=" y: ";
-        // positioning += y;
-        // Serial.println(positioning);
+        String positioning = "TAG01 POSITION >> x: ";
+        positioning += x; positioning +=" y: ";
+        positioning += y;
+        Serial.println(positioning);
         ///////////////////////////
       }
     }

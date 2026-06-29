@@ -33,11 +33,11 @@ device_configuration_t DEFAULT_CONFIG = {
     true,
     false,
     SFDMode::STANDARD_SFD,
-    Channel::CHANNEL_5,
-    DataRate::RATE_850KBPS,
-    PulseFrequency::FREQ_16MHZ,
-    PreambleLength::LEN_256,
-    PreambleCode::CODE_3
+    Channel::CHANNEL_2,
+    DataRate::RATE_110KBPS,
+    PulseFrequency::FREQ_64MHZ,
+    PreambleLength::LEN_1024,
+    PreambleCode::CODE_9
 };
 
 frame_filtering_configuration_t ANCHOR_FRAME_FILTER_CONFIG = {
@@ -80,12 +80,14 @@ void LPS::begin(uint8_t device_address){
   DW1000Ng::applyConfiguration(DEFAULT_CONFIG);
   DW1000Ng::enableFrameFiltering(ANCHOR_FRAME_FILTER_CONFIG);
   DW1000Ng::setEUI(EUI);
-  DW1000Ng::setPreambleDetectionTimeout(15);
-  DW1000Ng::setSfdDetectionTimeout(273);
-  DW1000Ng::setReceiveFrameWaitTimeoutPeriod(2000);
+  DW1000Ng::setPreambleDetectionTimeout(64);
+  DW1000Ng::setSfdDetectionTimeout(1089);
+  DW1000Ng::setReceiveFrameWaitTimeoutPeriod(5000);
   DW1000Ng::setNetworkId(PAN_ID);
   DW1000Ng::setDeviceAddress(device_address);
-  DW1000Ng::setAntennaDelay(16436);
+  DW1000Ng::setAntennaDelay(16400);
+  uint32_t manualPower = 0xBFBFBFBF; 
+  DW1000Ng::setTXPower(manualPower);
 }
 
 void LPS::beginTag(uint8_t device_address){
@@ -97,11 +99,13 @@ void LPS::beginTag(uint8_t device_address){
   DW1000Ng::enableFrameFiltering(TAG_FRAME_FILTER_CONFIG);
   DW1000Ng::setEUI(EUI);
   DW1000Ng::setNetworkId(PAN_ID);
-  DW1000Ng::setAntennaDelay(16436);
-  DW1000Ng::setPreambleDetectionTimeout(15);
-  DW1000Ng::setSfdDetectionTimeout(273);
-  DW1000Ng::setReceiveFrameWaitTimeoutPeriod(2000);
+  DW1000Ng::setAntennaDelay(16400);
+  DW1000Ng::setPreambleDetectionTimeout(64);
+  DW1000Ng::setSfdDetectionTimeout(1089);
+  DW1000Ng::setReceiveFrameWaitTimeoutPeriod(12000);
   DW1000Ng::setDeviceAddress(device_address);
+  uint32_t manualPower = 0xBFBFBFBF; 
+  DW1000Ng::setTXPower(manualPower);
 }
 
 
@@ -204,7 +208,7 @@ void LPS::commitData(){
 }
 
 bool LPS::tagStartRTLS(){
-  RangeInfrastructureResult res = DW1000NgRTLS::tagTwrLocalize(1500);
+  RangeInfrastructureResult res = DW1000NgRTLS::tagTwrLocalize(7500);
   if(res.success){
     //Serial.println("SUKSES");
     return true;

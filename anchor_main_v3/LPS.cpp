@@ -13,9 +13,9 @@ typedef struct Position {
 char EUI[] = "DE:21:06:26:00:00:00:";
 uint16_t PAN_ID = 0xDEDE;
 uint8_t self_address = 0x00;
-Position position_self = {0,0};
-Position position_B = {1.2,0};
-Position position_C = {1.2,1.6};
+Position position_self = {0.0,0.0};
+Position position_B = {2.3,0};
+Position position_C = {2.3,4.0};
 double range_self;
 double range_B;
 double range_C;
@@ -34,11 +34,11 @@ device_configuration_t DEFAULT_CONFIG = {
     true,
     false,
     SFDMode::STANDARD_SFD,
-    Channel::CHANNEL_5,
-    DataRate::RATE_850KBPS,
-    PulseFrequency::FREQ_16MHZ,
-    PreambleLength::LEN_256,
-    PreambleCode::CODE_3
+    Channel::CHANNEL_2,
+    DataRate::RATE_110KBPS,
+    PulseFrequency::FREQ_64MHZ,
+    PreambleLength::LEN_1024,
+    PreambleCode::CODE_9
 };
 
 frame_filtering_configuration_t ANCHOR_FRAME_FILTER_CONFIG = {
@@ -70,11 +70,13 @@ void LPS::begin(uint8_t device_address){
   DW1000Ng::enableFrameFiltering(ANCHOR_FRAME_FILTER_CONFIG);
   DW1000Ng::setEUI(EUI);
   DW1000Ng::setPreambleDetectionTimeout(64);
-  DW1000Ng::setSfdDetectionTimeout(273);
-  DW1000Ng::setReceiveFrameWaitTimeoutPeriod(5000);
+  DW1000Ng::setSfdDetectionTimeout(1089);
+  DW1000Ng::setReceiveFrameWaitTimeoutPeriod(12000);
   DW1000Ng::setNetworkId(PAN_ID);
   DW1000Ng::setDeviceAddress(device_address);
-  DW1000Ng::setAntennaDelay(16493);
+  DW1000Ng::setAntennaDelay(16524);
+  uint32_t manualPower = 0xBFBFBFBF; 
+  DW1000Ng::setTXPower(manualPower);
 }
 
 
@@ -128,9 +130,11 @@ bool LPS::startRTLS(uint8_t target, double &outX, double &outY){
 
     } else if(recv_data[9] == 0x60) {
         double range = static_cast<double>(DW1000NgUtils::bytesAsValue(&recv_data[10],2) / 1000.0);
+
         // String rangeReportString = "Range from: "; rangeReportString += recv_data[7];
         // rangeReportString += " = "; rangeReportString += range;
         // Serial.println(rangeReportString);
+
         if(received_B == false && recv_data[7] == anchor_b[0] && recv_data[8] == anchor_b[1]) {
             range_B = range;
             received_B = true;
